@@ -1,0 +1,1 @@
+web gunicorn sistHoraios.wsgi:aplication --log-file -
