@@ -1,0 +1,150 @@
+{% extends "html/base.html" %}
+
+
+{% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <div class="products-area-wrapper tableView">
+    <form enctype="multipart/form-data" action="/submitPMS/" method="GET">
+        {%csrf_token%}
+       
+        <div id="actualizar">
+            <div class="container h-100">
+              <div class="row d-flex justify-content-center align-items-center h-100">
+                <div class="col-xl-9">
+                  <div class="card" style="border-radius: 15px;">
+                    <div class="card-body">
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Profesor</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          {{profesor.nombre}}
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Materia</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          {{materia.clave}}
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Salon</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          {{salon.salon}}
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Hora de inicio</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          <input 
+                          type="time" value=""
+                          class="form-control form-control-lg"
+                          name="horaI"
+                           />
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Hora de salida</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          <input 
+                          type="time" value=""
+                          class="form-control form-control-lg"
+                          name="horaS"
+                           />
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+                      <!------------------------------------------------>
+    
+                      <div class="row align-items-center pt-4 pb-3">
+                        <div class="col-md-3 ps-5">
+          
+                          <h6 class="mb-0">Dias</h6>
+          
+                        </div>
+                        <div class="col-md-9 pe-5">
+          
+                          <fieldset>
+                            <label>
+                                <input type="radio" name="Lunes" value="1">Lunes
+                            </label>
+                            <label>
+                                <input type="radio" name="Martes" value="2">Martes
+                            </label>
+                            <label>
+                                <input type="radio" name="Miercoles" value="3">Miercoles
+                            </label>
+                            <label>
+                                <input type="radio" name="Jueves" value="4">Jueves
+                            </label>
+                            <label>
+                              <input type="radio" name="Viernes" value="5">Viernes
+                          </label>
+                        </fieldset>
+          
+                        </div>
+                      </div>
+                      <!------------------------------------------------>
+          
+                      <div class="px-5 py-4" style="display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      ">
+                        <input name="" id="" class="btn btn-primary btn-lg" type="submit" value="Enviar informacion"> 
+                        
+                      </div>
+          
+                    </div>
+                  </div>
+          
+                </div>
+              </div>
+            </div>
+    </form>
+    </div>
+{% endblock content %}

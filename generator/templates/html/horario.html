@@ -1,0 +1,142 @@
+{% extends "html/base.html" %}
+
+{% block content %}
+  
+  
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+  
+  <div class="app-content-header">
+    <h1 class="app-content-headerText">Profesores: {{profesor.nombre}}</h1>
+    <button class="app-content-headerButton">Añadir profesor</button>
+  </div>
+  <div class="app-content-actions">
+    <input class="search-bar" placeholder="Search..." type="text">
+    <div class="app-content-actions-wrapper">
+      
+      <div class="filter-button-wrapper" >
+        <button class="action-button filter jsFilter" ><span>Filter</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+        <div class="filter-menu">
+          <label>Category</label>
+          <select>
+            <option>All Categories</option>
+            <option>Furniture</option>                     <option>Decoration</option>
+            <option>Kitchen</option>
+            <option>Bathroom</option>
+          </select>
+          <label>Status</label>
+          <select>
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Disabled</option>
+          </select>
+          <div class="filter-menu-buttons">
+            <button class="filter-button reset">
+              Reset
+            </button>
+            <button class="filter-button apply">
+              Apply
+            </button>
+          </div>
+        </div>
+        
+      </div>
+      <button type="button" class="btn btn-success">Actualizar</button>
+      <button type="button" class="btn btn-danger">Eliminar</button>
+     
+    </div>
+    
+  </div>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+
+    <style>
+    html {
+      font-family: sans-serif;
+
+    }
+
+    table {
+      border-collapse: collapse;
+      border: 2px solid rgb(200,200,200);
+      letter-spacing: 1px;
+      font-size: 0.8rem;
+    }
+
+    td, th {
+      border: 1px solid rgb(190,190,190);
+      padding: 10px 20px;
+    }
+
+    td {
+      text-align: center;
+    }
+
+    caption {
+      padding: 10px;
+    }
+    </style>
+  </head>
+  <div class="products-area-wrapper tableView" >
+  <div>
+    <h2 class="app-content-headerText">Clases impartidas <a href="{% url 'anadirProfesorMateria' profesor.idprof %}" class="btn btn-info">Añadir materia</a></h2>
+    
+    <table  bgcolor="#ffffff">
+      <tr>
+        <th>Clave</th>
+        <th>Status</th>
+        <th>&nbsp;</th>
+      </tr>
+      
+        {%for item1,item2 in compl2%}
+        <tr>
+          <td>{{item1.materias_clave.clave}}</td>
+          {% if item2 == "N/A" %}
+          <td><a name="" id=""class="btn btn-danger" href="{% url 'asignaSalon' profesor.idprof item1.materias_clave.clave %}" role="button">{{item2}}</a></td>
+          {% else %}
+          <td>{{item2}}</td>
+          {% endif %}
+          
+          <td><a name="" id=""class="btn btn-danger" href="{% url 'eliminarProfesorMateria' item1.materias_clave.clave profesor.idprof %}" role="button"><i class="fa fa-close" ></i></a></td>
+        </tr>
+    {%endfor%}
+      
+      
+    </table>
+  </div>
+  <h2 class="app-content-headerText">Horario</h2>
+  <div class="products-area-wrapper tableView" >
+    <div class="container h-100">
+      <div class="row d-flex justify-content-center align-items-center h-100">
+
+    <table  bgcolor="#ffffff">
+      <tr>
+        <td>&nbsp;</td>
+        <th>Lunes</th>
+        <th>Martes</th>
+        <th>Miercoles</th>
+        <th>Jueves</th>
+        <th>Viernes</th>
+      </tr>
+      {% for item1,item2 in compl%}
+      <tr>
+        <th>{{item1}}</th>
+        {% for n,m in item2.items%}
+        {% if m == 0 %}
+        <td>&nbsp;</td>
+        {% else %}
+        <td>{{m}}</td>
+        {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </table>
+  </div></div>
+  </div>
+</div>
+
+    {% endblock content %}
