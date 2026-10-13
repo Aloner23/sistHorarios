@@ -1,0 +1,17 @@
+<div class="products-area-wrapper">
+  <table class="horario">
+    <thead>
+      <tr><th>Hora</th><th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th></tr>
+    </thead>
+    <tbody>
+      {% for fila in grilla %}
+      <tr class="{% cycle 'hora-par' '' %}">
+        <th>{{ fila.hora }}</th>
+        {% for celda in fila.celdas %}
+        <td{% if celda %} class="ocupada"{% endif %}>{% if celda %}{{ celda }}{% else %}&nbsp;{% endif %}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

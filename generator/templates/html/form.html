@@ -1,55 +1,23 @@
 {% extends "html/base.html" %}
-
-
+{% block title %}{{ titulo }} · Sistema de Horarios{% endblock %}
 {% block content %}
-{% load static %}
-<link rel="stylesheet" href="{% static 'style.css' %}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-  <div class="products-area-wrapper tableView" >
-    <form enctype="multipart/form-data" method="post">
-        {%csrf_token%}
-       
-        <div id="actualizar">
-            <div class="container h-100">
-              <div class="row d-flex justify-content-center align-items-center h-100">
-                <div class="col-xl-9">
-                  <div class="card" style="border-radius: 15px;">
-                    <div class="card-body">
-    
-                      {% for campo in form %}
-                      <div class="row align-items-center pt-4 pb-3">
-                        <div class="col-md-3 ps-5">
-          
-                          <h6 class="mb-0">{{campo.label}}</h6>
-          
-                        </div>
-                        <div class="col-md-9 pe-5">
-          
-                          <input 
-                          type="{{ campo.field.widget.input_type }}" 
-                          class="form-control form-control-lg"
-                          name="{{campo.name}}"
-                          value="{{ campo.value | default:''}}" />
-          
-                        </div>
-                      </div>
-                      {% endfor %}
-          
-                      <div class="px-5 py-4" style="display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      ">
-                        <input name="" id="" class="btn btn-primary btn-lg" type="submit" value="Enviar informacion"> 
-                        
-                      </div>
-          
-                    </div>
-                  </div>
-          
-                </div>
-              </div>
-            </div>
-    </form>
-    </div>
-{% endblock content %}
+<div class="app-content-header">
+  <h1 class="app-content-headerText">{{ titulo }}</h1>
+</div>
+<form method="post" class="form-card" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+  {% for campo in form %}
+  <div class="form-row">
+    <label for="{{ campo.id_for_label }}">{{ campo.label|capfirst }}</label>
+    {{ campo }}
+    {% if campo.help_text %}<span class="helptext">{{ campo.help_text }}</span>{% endif %}
+    {{ campo.errors }}
+  </div>
+  {% endfor %}
+  <div style="display:flex; gap:10px; justify-content:flex-end">
+    <a class="btn btn-ghost" href="{% url 'profesores' %}">Cancelar</a>
+    <button class="btn" type="submit">Guardar</button>
+  </div>
+</form>
+{% endblock %}
