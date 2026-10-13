@@ -1,0 +1,30 @@
+[project]
+name = "sisthorarios"
+version = "1.0.0"
+description = "Generador de horarios escolares con Django"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Carlos (Aloner23)" }]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["generator/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "DJ", "SIM", "C4"]
+ignore = []
+
+[tool.ruff.lint.isort]
+known-first-party = ["generator", "sistHoraios"]
+
+[tool.ruff.lint.per-file-ignores]
+"generator/management/commands/seed_demo.py" = ["E501"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "sistHoraios.settings"
+python_files = ["test_*.py", "tests.py"]
+testpaths = ["generator/tests"]
+addopts = "-q -p generator.tests.entorno"
+pythonpath = ["."]
+filterwarnings = ["ignore:No directory at:UserWarning"]
