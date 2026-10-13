@@ -185,3 +185,33 @@ def test_construir_grilla_fin_exclusivo():
     assert len(grilla) == s.TOTAL_MEDIAS_HORAS
     assert [f["celdas"][0] for f in grilla[:5]] == ["MAT"] * 4 + [""]
     assert grilla[0]["celdas"][2] == "MAT" and grilla[0]["celdas"][1] == ""
+
+
+@pytest.mark.parametrize(
+    "recurso",
+    [{"prof": 7}, {"grupo": "Compu|1"}],
+    ids=["profesor", "grupo"],
+)
+def test_choque_en_salones_distintos_obliga_a_otra_hora(recurso):
+    # A-1 sólo tiene hueco para una clase (L/M de 0 a 4, M/J cerrado), así que la
+    # segunda clase debe ir a A-2. Si el algoritmo ignorara al profesor o al grupo,
+    # la pondría también de 0 a 4 y habría un choque simultáneo en dos salones.
+    estrecho = ["0-4,11-20,21-30,", "x,11-20,21-30,"] * 2 + ["x,11-20,21-30,"]
+    salones = [salon("A-1", disp=estrecho), salon("A-2")]
+    prof = recurso.get("prof")
+    clases = [
+        clase(1, prof=prof or 1, grupo=recurso.get("grupo", "")),
+        clase(2, prof=prof or 2, grupo=recurso.get("grupo", "")),
+    ]
+    r = s.generar_horario(clases, salones)
+    assert len(r.colocadas) == 2
+    assert {c.salon for c in r.colocadas} == {"A-1", "A-2"}
+    assert_sin_traslapes(r, clases)
+
+
+def test_sin_evitar_choques_de_grupo_se_permite_simultaneidad():
+    estrecho = ["0-4,11-20,21-30,", "x,11-20,21-30,"] * 2 + ["x,11-20,21-30,"]
+    salones = [salon("A-1", disp=estrecho), salon("A-2")]
+    clases = [clase(1, prof=1, grupo="G"), clase(2, prof=2, grupo="G")]
+    r = s.generar_horario(clases, salones, evitar_choques_de_grupo=False)
+    assert [(c.dias, c.inicio) for c in r.colocadas] == [("LM", 0), ("LM", 0)]
