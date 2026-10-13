@@ -37,7 +37,12 @@ body {
 
 a { color: var(--app-content-muted); }
 
-.app-container { display: flex; min-height: 100vh; }
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  /* El fondo del sidebar se extiende aunque el contenido sea más alto que la ventana. */
+  background: linear-gradient(to right, var(--sidebar) 220px, transparent 220px);
+}
 
 /* --- Sidebar ------------------------------------------------------------ */
 
@@ -127,6 +132,8 @@ form.inline { display: inline; margin: 0; }
 .tableView .products-row:hover { box-shadow: var(--filter-shadow); background-color: var(--app-content-secondary-color); }
 .tableView .product-cell { flex: 1; padding: 9px 14px; color: var(--app-content-main-color); font-size: 14px; display: flex; align-items: center; gap: 6px; }
 .tableView .product-cell.wide { flex: 2; }
+.card .tableView .products-header,
+.card .tableView .products-row { min-width: 0; }
 .tableView .product-cell.actions { justify-content: flex-end; flex: 1.2; }
 .muted { color: var(--app-content-muted); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
@@ -166,7 +173,7 @@ table.horario tr.hora-par th, table.horario tr.hora-par td { border-top-color: #
 /* --- Responsivo --------------------------------------------------------- */
 
 @media (max-width: 900px) {
-  .app-container { flex-direction: column; }
+  .app-container { flex-direction: column; background: none; }
   .sidebar { position: static; height: auto; flex-basis: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .sidebar-header { padding: 12px 16px; }
   .sidebar-list { display: flex; flex-wrap: wrap; }

@@ -193,12 +193,20 @@ def salones(request):
     return render(request, "html/salones.html", {"salones": salones})
 
 
+def _nombre_corto(nombre: str) -> str:
+    """'Mtro. José Luis Ramírez Ortega' -> 'J. Ramírez'."""
+    partes = [p for p in nombre.split() if not p.endswith(".")]
+    if len(partes) >= 3:
+        return f"{partes[0][0]}. {partes[-2]}"
+    return " ".join(partes) or nombre
+
+
 @login_required
 def horarioSalon(request, clave):
     salon = get_object_or_404(Salon, pk=clave)
     asignaciones = salon.asignaciones.select_related("clase__materia", "clase__profesor")
     grilla = services.grilla_de(
-        asignaciones, lambda a: f"{a.clase.materia_id} · {a.clase.profesor.nombre.split()[0]}"
+        asignaciones, lambda a: f"{a.clase.materia_id} · {_nombre_corto(a.clase.profesor.nombre)}"
     )
     context = {"salon": salon, "asignaciones": asignaciones, "grilla": grilla}
     return render(request, "html/horario_salon.html", context)
