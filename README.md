@@ -1,6 +1,6 @@
 # Sistema de Horarios
 
-> **English summary:** A Django web app that builds weekly class timetables for a university. Given professors, courses (hours per week, preferred shift, room type) and classrooms (availability by morning/afternoon/evening block), a greedy scheduler assigns each class a room, days and time with no room, professor or student-group clashes. Includes a dashboard, per-professor / per-room / per-group timetables, manual assignment with conflict validation, demo data, 48 automated tests and CI.
+> **English summary:** A Django web app that builds weekly class timetables for a university. Given professors, courses (hours per week, preferred shift, room type) and classrooms (availability by morning/afternoon/evening block), a greedy scheduler assigns each class a room, days and time with no room, professor or student-group clashes. Includes a dashboard, per-professor / per-room / per-group timetables, manual assignment with conflict validation, demo data, 51 automated tests and CI.
 
 Aplicación web en **Django** para generar los horarios semanales de una facultad: asigna a cada clase (profesor + materia) un salón, días y hora, respetando el turno preferido, el tipo de salón y la disponibilidad, sin que choquen salones, profesores ni grupos.
 
@@ -149,7 +149,7 @@ Revisa `.env.example`.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest            # 48 pruebas
+pytest            # 51 pruebas
 ruff check . && ruff format --check .
 ```
 
