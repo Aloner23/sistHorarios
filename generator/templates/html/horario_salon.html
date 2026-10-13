@@ -1,0 +1,12 @@
+{% extends "html/base.html" %}
+{% block title %}Salón {{ salon }} · Sistema de Horarios{% endblock %}
+{% block content %}
+<div class="app-content-header">
+  <div>
+    <h1 class="app-content-headerText">Salón {{ salon }}</h1>
+    <p class="subtitle">{{ salon.get_tipo_display }} · {{ asignaciones|length }} clase{{ asignaciones|length|pluralize }}</p>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'salones' %}">← Salones</a>
+</div>
+{% include "html/_grilla.html" %}
+{% endblock %}

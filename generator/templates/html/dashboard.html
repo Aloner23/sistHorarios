@@ -1,0 +1,90 @@
+{% extends "html/base.html" %}
+{% block title %}Inicio · Sistema de Horarios{% endblock %}
+{% block content %}
+<div class="app-content-header">
+  <div>
+    <h1 class="app-content-headerText">Panel de horarios</h1>
+    <p class="subtitle">Asigna automáticamente salón, días y hora a cada clase según el turno preferido y el tipo de salón.</p>
+  </div>
+</div>
+
+<section class="cards" aria-label="Resumen">
+  <div class="card"><div class="value">{{ stats.profesores }}</div><div class="label">Profesores</div></div>
+  <div class="card"><div class="value">{{ stats.materias }}</div><div class="label">Materias</div></div>
+  <div class="card"><div class="value">{{ stats.salones }}</div><div class="label">Salones</div></div>
+  <div class="card">
+    <div class="value">{{ stats.asignadas }}<span class="muted" style="font-size:16px"> / {{ stats.clases }}</span></div>
+    <div class="label">Clases asignadas ({{ stats.avance }}%)</div>
+    <div class="progress"><span style="width: {{ stats.avance }}%"></span></div>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2 class="app-content-headerText">Generar horario</h2>
+    <p class="subtitle">Procesa las clases pendientes en orden mañana → tarde → noche y respeta las asignaciones existentes.</p>
+    <form method="post" action="{% url 'generar' %}" class="filters" style="margin-top:14px">
+      {% csrf_token %}
+      <label>Carrera {{ form.carrera }}</label>
+      <label>Semestre {{ form.semestre }}</label>
+      <button class="btn btn-ok" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generar
+      </button>
+    </form>
+    <form method="post" action="{% url 'reiniciar' %}" style="margin-top:12px"
+          onsubmit="return confirm('¿Eliminar todas las asignaciones?')">
+      {% csrf_token %}
+      <button class="btn btn-ghost btn-sm" type="submit">Reiniciar asignaciones</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2 class="app-content-headerText">Avance por grupo</h2>
+    <div class="products-area-wrapper tableView" style="margin-top:10px">
+      <div class="products-header">
+        <div class="product-cell wide">Carrera</div>
+        <div class="product-cell">Semestre</div>
+        <div class="product-cell">Asignadas</div>
+      </div>
+      {% for g in grupos %}
+      <div class="products-row">
+        <div class="product-cell wide">{{ g.carrera }}</div>
+        <div class="product-cell">{{ g.semestre }}°</div>
+        <div class="product-cell">
+          <a href="{% url 'horarioGrupo' %}?carrera={{ g.carrera|urlencode }}&semestre={{ g.semestre }}">{{ g.asignadas }} / {{ g.n }}</a>
+        </div>
+      </div>
+      {% empty %}
+      <p class="muted">Sin materias. Ejecuta <code>python manage.py seed_demo</code> para cargar datos de ejemplo.</p>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+{% if pendientes %}
+<section>
+  <h2 class="app-content-headerText">Clases pendientes</h2>
+  <div class="products-area-wrapper tableView" style="margin-top:10px">
+    <div class="products-header">
+      <div class="product-cell">Clave</div>
+      <div class="product-cell wide">Materia</div>
+      <div class="product-cell wide">Profesor</div>
+      <div class="product-cell">Turno</div>
+      <div class="product-cell">Salón</div>
+      <div class="product-cell actions"></div>
+    </div>
+    {% for c in pendientes %}
+    <div class="products-row">
+      <div class="product-cell mono">{{ c.materia.clave }}</div>
+      <div class="product-cell wide">{{ c.materia.nombre }}</div>
+      <div class="product-cell wide">{{ c.profesor }}</div>
+      <div class="product-cell">{{ c.materia.get_preferencia_display }}</div>
+      <div class="product-cell">{{ c.materia.get_tipo_display }}</div>
+      <div class="product-cell actions"><a class="btn btn-sm btn-ghost" href="{% url 'asignaSalon' c.profesor.pk c.materia.clave %}">Asignar a mano</a></div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
