@@ -1,249 +1,227 @@
-from django.shortcuts import render
-from django.shortcuts import render,redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
-from .models import Materias, Profesores, Salones, ProfesoresHasMaterias, SalonesHasProfesoresHasMaterias
-from .forms import profesorForm, SalonesHasProfesoresHasMateriasForm
-
-from tokenize import Double
-import pymysql
-import operator
-from operator import itemgetter
+from . import services
+from .forms import AsignacionForm, GenerarForm, ProfesorForm
+from .models import Asignacion, Materia, Profesor, ProfesorMateria, Salon
 
 
-#se presentan los metos basicos de consulta, eliminar e insertar
+def _carreras_y_semestres():
+    carreras = Materia.objects.order_by("carrera").values_list("carrera", flat=True).distinct()
+    semestres = Materia.objects.order_by("semestre").values_list("semestre", flat=True).distinct()
+    return list(carreras), list(semestres)
 
-#aqui se prepara la coneccion a la BD
-cnn=pymysql.connect(host="localhost",user="root",
-passwd="sqladmin",database="sistemahorario")
-cnn1=pymysql.connect(host="localhost",user="root",
-passwd="sqladmin",database="sistemahorario")
 
-# Create your views here.
-def login(request):
-    return render(request,'html/login.html')
-def base(request):
-    return render(request,'html/base.html')
+@login_required
+def dashboard(request):
+    carreras, semestres = _carreras_y_semestres()
+    total_clases = ProfesorMateria.objects.count()
+    asignadas = Asignacion.objects.count()
+    context = {
+        "stats": {
+            "profesores": Profesor.objects.count(),
+            "materias": Materia.objects.count(),
+            "salones": Salon.objects.count(),
+            "clases": total_clases,
+            "asignadas": asignadas,
+            "pendientes": total_clases - asignadas,
+            "avance": round(100 * asignadas / total_clases) if total_clases else 0,
+        },
+        "form": GenerarForm(carreras=carreras, semestres=semestres),
+        "pendientes": services.clases_pendientes()[:10],
+        "grupos": Materia.objects.values("carrera", "semestre")
+        .annotate(n=Count("clases"), asignadas=Count("clases__asignacion"))
+        .order_by("carrera", "semestre"),
+    }
+    return render(request, "html/dashboard.html", context)
+
+
+@login_required
+@require_POST
+def generar(request):
+    carreras, semestres = _carreras_y_semestres()
+    form = GenerarForm(request.POST, carreras=carreras, semestres=semestres)
+    if not form.is_valid():
+        messages.error(request, "Filtro no válido.")
+        return redirect("dashboard")
+    resultado = services.generar(form.cleaned_data["carrera"], form.cleaned_data["semestre"])
+    if resultado.colocadas:
+        messages.success(request, f"Se asignaron {len(resultado.colocadas)} clases.")
+    if resultado.sin_asignar:
+        messages.warning(
+            request,
+            f"{len(resultado.sin_asignar)} clases no cupieron en ningún salón de su turno: "
+            + ", ".join(c.materia for c in resultado.sin_asignar[:8]),
+        )
+    if not resultado.colocadas and not resultado.sin_asignar:
+        messages.info(request, "No hay clases pendientes con ese filtro.")
+    return redirect("dashboard")
+
+
+@login_required
+@require_POST
+def reiniciar(request):
+    borradas, _ = Asignacion.objects.all().delete()
+    messages.info(request, f"Se eliminaron {borradas} asignaciones.")
+    return redirect("dashboard")
+
+
+# --- Profesores --------------------------------------------------------------
+
+
+@login_required
 def profesores(request):
-    profes= Profesores.objects.all()
-    return render(request,'html/profesores.html',{'profes':profes})
+    profes = Profesor.objects.annotate(
+        n_materias=Count("clases", distinct=True),
+        n_asignadas=Count("clases__asignacion", distinct=True),
+    )
+    return render(request, "html/profesores.html", {"profes": profes})
 
-def materias(request):
-    materias=Materias.objects.all()
-    return render (request,'html/materias.html',{'materias':materias})
-def salones(request):
-    salones=Salones.objects.all()
-    return render (request,'html/salones.html',{'salones':salones})
 
-def horario(request,idprof):
-    profesor=Profesores.objects.get(idprof=idprof)
-    materias=ProfesoresHasMaterias.objects.raw('SELECT * FROM sistemahorario.profesores_has_materias where Profesores_idProf=%s',[idprof])
-    horario=SalonesHasProfesoresHasMaterias.objects.raw('SELECT * FROM sistemahorario.salones_has_profesores_has_materias where Profesores_idProf=%s',[idprof])
-    horas=["7:00","7:30","8:00","8:30","9:00","9:30","10:00","10:30","11:00","11:30","12:00","12:30",
-    "13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00",
-    "19:30","20:00","20:30","21:00","21:30","22:00"]
-
-    hr=[
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0},
-    {"Lun":0,"Mar":0,"Mie":0,"Juev":0,"Vier":0}]
-    stat=[]
-    def status(horario,materias):
-        for i in materias:
-            flag=False
-            for y in horario:
-                if i.materias_clave== y.materias_clave:
-                    stat.append("Asignado")
-                    flag= True
-            if flag== False:
-                stat.append("N/A")
-        
-        return stat
-    stat=status(horario,materias)
-    compl2=zip(materias,stat)
-    def convertidor(horario,hr):
-        count=''
-        for y in horario:
-            count=''
-            a=0
-            b=0
-            con=0
-            for i in y.horario:
-                if i=='-':
-                    a=int(count)
-                    count=''
-                else:
-                    count=count+i
-            b=int(count)
-            con=0
-            for x in hr:
-                if con<=b and con>=a:
-                    if y.dias==1:
-                        x['Lun']=y.materias_clave.clave
-                        x['Mie']=y.materias_clave.clave
-                    if y.dias==2:
-                        x['Mar']=y.materias_clave.clave
-                        x['Juev']=y.materias_clave.clave
-                    con=con+1
-                else:
-                    con=con+1
-        return hr
-    rend= convertidor (horario,hr)
-    compl=zip(horas,rend)
-    
-    context ={
-        'profesor':profesor,
-        'materias':materias,
-        'horario':horario,
-        'horas':horas,
-        'rend':rend,
-        'compl':compl,
-        'compl2':compl2,
-    }
-    
-    return render (request,'html/horario.html',context)
-
-def editarProfesor(request,idprof):
-    profesor=Profesores.objects.get(idprof=idprof)
-    form = profesorForm(request.POST or None, request.FILES or None, instance=profesor)
-    if form.is_valid():
-        form.save()
-        return redirect('/dashboard/profesores/')
-    return render(request,'html/form.html',{'form':form})
+@login_required
 def anadirProfesor(request):
-    form = profesorForm(request.POST or None, request.FILES or None)
+    form = ProfesorForm(request.POST or None)
+    if form.is_valid():
+        profesor = form.save()
+        messages.success(request, f"Profesor {profesor} agregado.")
+        return redirect("profesores")
+    return render(request, "html/form.html", {"form": form, "titulo": "Añadir profesor"})
+
+
+@login_required
+def editarProfesor(request, idprof):
+    profesor = get_object_or_404(Profesor, pk=idprof)
+    form = ProfesorForm(request.POST or None, instance=profesor)
     if form.is_valid():
         form.save()
-        return redirect('/dashboard/profesores/')
-    return render(request,'html/form.html',{'form':form})
-def eliminarProfesor(request,idprof):
-    profesor=Profesores.objects.get(idprof=idprof)
+        messages.success(request, "Cambios guardados.")
+        return redirect("profesores")
+    return render(request, "html/form.html", {"form": form, "titulo": f"Editar a {profesor}"})
+
+
+@login_required
+@require_POST
+def eliminarProfesor(request, idprof):
+    profesor = get_object_or_404(Profesor, pk=idprof)
     profesor.delete()
-    return redirect('/dashboard/profesores/')
-def anadirProfesorMateria(request,idprof):
-    profesor=Profesores.objects.get(idprof=idprof)
-    materias=Materias.objects.all()
-    context={
-        "profesor":profesor,
-        "materias":materias
-    }
-    return render(request,'html/asignaMateria.html',context)
-"""
-def enterProfesorMateria(request,idprof):
-    materias_clave = request.GET.get('input_value_1')
-    cur=cnn.cursor()
-    sql='''insert into sistemahorario.profesores_has_materias(Profesores_idProf,Materias_Clave)
-     values({},'{}')'''.format(idprof,materias_clave)
-    cur.execute(sql)
-    cnn.commit()
-    cur.close()
-    #cnn.close()
-    return redirect('/horario/'+str(idprof))
-"""
-def enterProfesorMateria(request,idprof,materias_clave):
-    cur=cnn.cursor()
-    sql='''insert into sistemahorario.profesores_has_materias(Profesores_idProf,Materias_Clave)
-     values({},'{}')'''.format(idprof,materias_clave)
-    cur.execute(sql)
-    cnn.commit()
-    cur.close()
-    #cnn.close()
-    return redirect('/horario/'+str(idprof))
+    messages.info(request, f"Profesor {profesor} eliminado.")
+    return redirect("profesores")
 
-def eliminarProfesorMateria(request,materias_clave,idprof):
-    cur=cnn.cursor()
-    sql='''DELETE FROM `sistemahorario`.`profesores_has_materias` WHERE (`Profesores_idProf` = '{}') and (`Materias_Clave` = '{}');'''.format(idprof,materias_clave)
-    cur.execute(sql)
-    cnn.commit()
-    cur.close()
-    #cnn.close()
-    return redirect('/horario/'+str(idprof))
 
-def asignaSalon(request,idprof,materias_clave):
-    profesor=Profesores.objects.get(idprof=idprof)
-    materia=Materias.objects.get(clave=materias_clave)
-    salones=Salones.objects.all()
-    context ={
-        'salones':salones,
-        'profesor':profesor,
-        'materia':materia
-    }
-    return render(request,'html/asignaSalon.html',context)
+@login_required
+def horario(request, idprof):
+    profesor = get_object_or_404(Profesor, pk=idprof)
+    clases = profesor.clases.select_related("materia", "asignacion__salon")
+    asignaciones = [c.asignacion for c in clases if c.asignada]
+    grilla = services.grilla_de(asignaciones, lambda a: f"{a.clase.materia_id} ({a.salon_id})")
+    context = {"profesor": profesor, "clases": clases, "grilla": grilla}
+    return render(request, "html/horario.html", context)
 
-"""
 
-def anadirProfesorMateriaSalon(request,idprof,materias_clave,salon):
-    profesor=Profesores.objects.get(idprof=idprof)
-    materia=Materias.objects.get(clave=materias_clave)
-    salon=Salones.objects.get(salon=salon)
+@login_required
+def anadirProfesorMateria(request, idprof):
+    profesor = get_object_or_404(Profesor, pk=idprof)
+    materias = Materia.objects.exclude(clases__profesor=profesor)
+    context = {"profesor": profesor, "materias": materias}
+    return render(request, "html/asignaMateria.html", context)
 
-    #relacion=SalonesHasProfesoresHasMaterias(salones_salon = salon,profesores_idprof = profesor,materias_clave = materia)
-    #relacion.save()
-    context={
-    'profesor':profesor,
-    'materia':materia,
-    'salon':salon
-    }
-    return render(request,'html/formSalA.html',context)
-"""
 
-def anadirProfesorMateriaSalon(request):
-    form = SalonesHasProfesoresHasMateriasForm(request.POST or None, request.FILES or None)
-    if form.is_valid():
+@login_required
+@require_POST
+def enterProfesorMateria(request, idprof, materias_clave):
+    profesor = get_object_or_404(Profesor, pk=idprof)
+    materia = get_object_or_404(Materia, pk=materias_clave)
+    _, creada = ProfesorMateria.objects.get_or_create(profesor=profesor, materia=materia)
+    if creada:
+        messages.success(request, f"{materia.clave} agregada a {profesor}.")
+    return redirect("horario", idprof=profesor.pk)
+
+
+@login_required
+@require_POST
+def eliminarProfesorMateria(request, materias_clave, idprof):
+    clase = get_object_or_404(ProfesorMateria, profesor_id=idprof, materia_id=materias_clave)
+    clase.delete()
+    messages.info(request, f"{materias_clave} eliminada.")
+    return redirect("horario", idprof=idprof)
+
+
+@login_required
+def asignaSalon(request, idprof, materias_clave):
+    clase = get_object_or_404(
+        ProfesorMateria.objects.select_related("profesor", "materia"),
+        profesor_id=idprof,
+        materia_id=materias_clave,
+    )
+    instancia = getattr(clase, "asignacion", None)
+    form = AsignacionForm(request.POST or None, instance=instancia, clase=clase)
+    if request.method == "POST" and form.is_valid():
         form.save()
-        return redirect('/dashboard/profesores/')
-    return render(request,'html/form.html',{'form':form})
+        messages.success(request, f"{clase.materia.clave} asignada.")
+        return redirect("horario", idprof=idprof)
+    salones = Salon.objects.filter(tipo=clase.materia.tipo)
+    context = {"form": form, "clase": clase, "salones": salones}
+    return render(request, "html/asignaSalon.html", context)
 
-def submitPMS(request,idprof,materias_clave,salon):
-    profesor=Profesores.objects.get(idprof=idprof)
-    materia=Materias.objects.get(clave=materias_clave)
-    salon=Salones.objects.get(salon=salon)
-    horaInicio=request.GET["horaI"]
-    horaSalida=request.GET["horaS"]
-    lunes=request.GET["Lunes"]
-    martes=request.GET["Martes"]
-    miercoles=request.GET["Miercoles"]
-    jueves=request.GET["Jueves"]
-    viernes=request.GET["Viernes"]
-    context={
-        "horaInicio":horaInicio,
-        "horaSalida":horaSalida,
-        "lunes":lunes,
-        "martes":martes,
-        "miercoles":miercoles,
-        "jueves":jueves,
-        "viernes":viernes,
-        "salon":salon,
-        "materia":materia,
-        "profesor":profesor
+
+@login_required
+@require_POST
+def desasignar(request, idprof, materias_clave):
+    Asignacion.objects.filter(clase__profesor_id=idprof, clase__materia_id=materias_clave).delete()
+    messages.info(request, f"Se liberó el salón de {materias_clave}.")
+    return redirect("horario", idprof=idprof)
+
+
+# --- Catálogos ---------------------------------------------------------------
+
+
+@login_required
+def materias(request):
+    materias = Materia.objects.annotate(
+        n_profesores=Count("clases", distinct=True),
+        n_asignadas=Count("clases__asignacion", distinct=True),
+    )
+    return render(request, "html/materias.html", {"materias": materias})
+
+
+@login_required
+def salones(request):
+    salones = Salon.objects.annotate(n_clases=Count("asignaciones"))
+    return render(request, "html/salones.html", {"salones": salones})
+
+
+@login_required
+def horarioSalon(request, clave):
+    salon = get_object_or_404(Salon, pk=clave)
+    asignaciones = salon.asignaciones.select_related("clase__materia", "clase__profesor")
+    grilla = services.grilla_de(
+        asignaciones, lambda a: f"{a.clase.materia_id} · {a.clase.profesor.nombre.split()[0]}"
+    )
+    context = {"salon": salon, "asignaciones": asignaciones, "grilla": grilla}
+    return render(request, "html/horario_salon.html", context)
+
+
+@login_required
+def horarioGrupo(request):
+    carreras, semestres = _carreras_y_semestres()
+    carrera = request.GET.get("carrera") or (carreras[0] if carreras else "")
+    try:
+        semestre = int(request.GET.get("semestre") or (semestres[0] if semestres else 1))
+    except ValueError:
+        semestre = 1
+    asignaciones = Asignacion.objects.filter(
+        Q(clase__materia__carrera=carrera) & Q(clase__materia__semestre=semestre)
+    ).select_related("clase__materia", "clase__profesor", "salon")
+    grilla = services.grilla_de(asignaciones, lambda a: f"{a.clase.materia_id} ({a.salon_id})")
+    context = {
+        "carreras": carreras,
+        "semestres": semestres,
+        "carrera": carrera,
+        "semestre": semestre,
+        "asignaciones": asignaciones,
+        "grilla": grilla,
     }
-
-
-    return render(request,'html/prueba.html',context)
+    return render(request, "html/horario_grupo.html", context)
