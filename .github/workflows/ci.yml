@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.17.0
+      - run: ruff check .
+      - run: ruff format --check .
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    env:
+      DEBUG: "True"
+      SECRET_KEY: ci-solo-pruebas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - name: Verificar migraciones
+        run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py check
+      - run: pytest
+      - name: Despliegue simulado (DEBUG=False)
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-clave-de-produccion-simulada
+        run: |
+          python manage.py collectstatic --noinput
+          python manage.py check --deploy --fail-level ERROR
