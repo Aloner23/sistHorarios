@@ -1,0 +1,38 @@
+{% extends "html/base.html" %}
+{% block title %}Horario de grupo · Sistema de Horarios{% endblock %}
+{% block content %}
+<div class="app-content-header">
+  <div>
+    <h1 class="app-content-headerText">Horario de grupo</h1>
+    <p class="subtitle">{{ carrera }} · {{ semestre }}° semestre · {{ asignaciones|length }} clase{{ asignaciones|length|pluralize }} asignada{{ asignaciones|length|pluralize }}</p>
+  </div>
+  <form method="get" class="filters">
+    <label>Carrera
+      <select name="carrera">{% for c in carreras %}<option value="{{ c }}"{% if c == carrera %} selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    </label>
+    <label>Semestre
+      <select name="semestre">{% for s in semestres %}<option value="{{ s }}"{% if s == semestre %} selected{% endif %}>{{ s }}°</option>{% endfor %}</select>
+    </label>
+    <button class="btn" type="submit">Ver</button>
+  </form>
+</div>
+{% include "html/_grilla.html" %}
+{% if asignaciones %}
+<div class="products-area-wrapper tableView">
+  <div class="products-header">
+    <div class="product-cell">Clave</div><div class="product-cell wide">Materia</div>
+    <div class="product-cell wide">Profesor</div><div class="product-cell">Salón</div>
+    <div class="product-cell wide">Días y hora</div>
+  </div>
+  {% for a in asignaciones %}
+  <div class="products-row">
+    <div class="product-cell mono">{{ a.clase.materia.clave }}</div>
+    <div class="product-cell wide">{{ a.clase.materia.nombre }}</div>
+    <div class="product-cell wide"><a href="{% url 'horario' a.clase.profesor.id %}">{{ a.clase.profesor }}</a></div>
+    <div class="product-cell"><a href="{% url 'horarioSalon' a.salon.clave %}">{{ a.salon }}</a></div>
+    <div class="product-cell wide">{{ a.get_dias_display }} · {{ a.horario }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
