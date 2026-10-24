@@ -1,5 +1,13 @@
 # Sistema de Horarios
 
+**Versión 1 · Aplicación web con Django**
+
+[Inicio rápido](#inicio-rápido) · [Arquitectura](#arquitectura) · [Evolución a FastAPI + OR-Tools](https://github.com/Aloner23/sistHorario)
+
+[![CI](https://github.com/Aloner23/sistHorarios/actions/workflows/ci.yml/badge.svg)](https://github.com/Aloner23/sistHorarios/actions/workflows/ci.yml)
+
+**Para evaluarlo:** sigue el inicio rápido y entra con la cuenta local `demo / demo`. Explora el panel y las vistas de horarios por grupo, profesor y salón. Esta es la aplicación Django; la [versión 2](https://github.com/Aloner23/sistHorario) separa la interfaz de una API y modela el horario con programación por restricciones.
+
 > **English summary:** A Django web app that builds weekly class timetables for a university. Given professors, courses (hours per week, preferred shift, room type) and classrooms (availability by morning/afternoon/evening block), a greedy scheduler assigns each class a room, days and time with no room, professor or student-group clashes. Includes a dashboard, per-professor / per-room / per-group timetables, manual assignment with conflict validation, demo data, 51 automated tests and CI.
 
 Aplicación web en **Django** para generar los horarios semanales de una facultad: asigna a cada clase (profesor + materia) un salón, días y hora, respetando el turno preferido, el tipo de salón y la disponibilidad, sin que choquen salones, profesores ni grupos.
